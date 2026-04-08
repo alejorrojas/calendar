@@ -32,10 +32,10 @@ export default function ComoFuncionaPage() {
             <span className="font-heading text-[15px] font-bold tracking-[-0.03em]">Calendarito</span>
           </Link>
           <Link
-            href="/empezar"
+            href="/login?next=/empezar"
             className="font-heading rounded-full bg-[#0A0A0A] px-5 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#333]"
           >
-            Start free
+            Login
           </Link>
         </nav>
       </div>

@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GOOGLE_CALENDAR_SCOPES } from '@/lib/google-oauth';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 const CalendarPreview = dynamic(() => import('./CalendarPreview'), { ssr: false });
@@ -101,7 +100,6 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 
 export default function EmpezarPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
   const [supabaseAccessToken, setSupabaseAccessToken] = useState('');
   const [googleAccessToken, setGoogleAccessToken] = useState('');
   const [calendars, setCalendars] = useState<Calendar[]>([]);
@@ -220,21 +218,6 @@ export default function EmpezarPage() {
     if (authenticated) void fetchCalendars();
   }, [authenticated, fetchCalendars]);
 
-  async function handleLogin() {
-    try {
-      setLoggingIn(true);
-      const supabase = createSupabaseBrowserClient();
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/empezar`,
-          scopes: GOOGLE_CALENDAR_SCOPES,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
-        },
-      });
-    } finally { setLoggingIn(false); }
-  }
-
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -333,13 +316,12 @@ export default function EmpezarPage() {
           </Link>
           <div className="flex items-center gap-2">
             {authenticated === false && (
-              <button
-                onClick={handleLogin}
-                disabled={loggingIn}
-                className="font-heading inline-flex cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-[#DDD] bg-white px-4 py-2 text-sm font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
+              <Link
+                href="/login?next=/empezar"
+                className="font-heading rounded-full bg-[#0A0A0A] px-5 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#333]"
               >
-                Connect with Google
-              </button>
+                Login
+              </Link>
             )}
             {authenticated === true && (
               <button
@@ -541,11 +523,11 @@ export default function EmpezarPage() {
               {/* CTA */}
               {!authenticated ? (
                 <button
-                  onClick={handleLogin}
-                  disabled={events.length === 0 || loggingIn}
+                  onClick={() => { window.location.href = '/login?next=/empezar'; }}
+                  disabled={events.length === 0}
                   className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
                 >
-                  {loggingIn ? 'Connecting...' : 'Connect with Google to continue'}
+                  Login to continue
                 </button>
               ) : (
                 <button
