@@ -1,4 +1,5 @@
 import { getOAuthClient, nextDay } from '@/lib/google';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -26,8 +27,12 @@ interface EventsPayload {
 }
 
 export async function POST(req: NextRequest) {
-  const tokenCookie = req.cookies.get('g_token');
-  if (!tokenCookie) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const supabase = await createSupabaseServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.provider_token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const body: EventsPayload = await req.json();
   const { events, calendarId, colorId, notifyDays, notifyHour } = body;
@@ -36,12 +41,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  // minutes before midnight of event day = X days before at Y hour
   const notifyMinutes = notifyDays * 24 * 60 - notifyHour * 60;
 
   try {
     const client = getOAuthClient();
-    client.setCredentials(JSON.parse(tokenCookie.value));
+    client.setCredentials({ access_token: session.provider_token });
     const calendar = google.calendar({ version: 'v3', auth: client });
 
     const created = [];
@@ -59,14 +63,8 @@ export async function POST(req: NextRequest) {
 
       if (isTimed && row.startTime) {
         const endTime = row.endTime ?? row.startTime;
-        start = {
-          dateTime: `${row.date}T${row.startTime}:00`,
-          ...(row.timezone ? { timeZone: row.timezone } : {}),
-        };
-        end = {
-          dateTime: `${row.date}T${endTime}:00`,
-          ...(row.timezone ? { timeZone: row.timezone } : {}),
-        };
+        start = { dateTime: `${row.date}T${row.startTime}:00`, ...(row.timezone ? { timeZone: row.timezone } : {}) };
+        end = { dateTime: `${row.date}T${endTime}:00`, ...(row.timezone ? { timeZone: row.timezone } : {}) };
       } else {
         start = { date: row.date };
         end = { date: nextDay(row.date) };
@@ -79,10 +77,7 @@ export async function POST(req: NextRequest) {
         end,
         ...(row.description ? { description: row.description } : {}),
         ...(row.location ? { location: row.location } : {}),
-        reminders: {
-          useDefault: false,
-          overrides: [{ method: 'email', minutes: reminderValue }],
-        },
+        reminders: { useDefault: false, overrides: [{ method: 'email', minutes: reminderValue }] },
       };
       const res = await calendar.events.insert({ calendarId, requestBody: event });
       const inserted = (res as { data: { htmlLink?: string } }).data;
