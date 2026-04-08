@@ -774,7 +774,7 @@ Dinner with Valentina on May 12`}
               ) : (
                 <button
                   onClick={handleSubmit}
-                  disabled={loading || extracting || events.length === 0 || !calendarId}
+                  disabled={loading || extracting || events.length === 0 || (!calendarId && !newCalendarName.trim())}
                   className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E8E815]/45 disabled:text-[#0A0A0A]/55"
                 >
                   {loading
