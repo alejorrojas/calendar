@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { HeroDemoCarousel } from "@/components/HeroDemoCarousel";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function WavySVG() {
@@ -177,17 +177,9 @@ export default function HomePage() {
               ? { duration: 0 }
               : { duration: 0.38, ease: "easeOut" }
           }
-          className="mb-16 w-full max-w-[500px] overflow-hidden rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)]"
+          className="mb-16 w-full max-w-[820px]"
         >
-          <Image
-            src="/hero-2.png"
-            alt="Character organizing a calendar"
-            width={500}
-            height={375}
-            quality={100}
-            className="block h-auto w-full"
-            priority
-          />
+          <HeroDemoCarousel />
         </motion.div>
 
         <p className="mx-auto max-w-[420px] text-xs text-[#999] pb-12">
