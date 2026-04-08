@@ -76,9 +76,9 @@ export default function HowItWorksPage() {
           Calendar.
         </p>
 
-        <div className="mx-auto w-full max-w-[900px] overflow-hidden rounded-[28px] border border-[#E4E4E4] bg-[#F7F7F7] shadow-[0_12px_36px_rgba(0,0,0,0.1)]">
+        <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-[28px] border border-[#E4E4E4] bg-[#F7F7F7] shadow-[0_12px_36px_rgba(0,0,0,0.1)]">
           <Image
-            src="/mapa-how.png"
+            src="/mapa.jpg"
             alt="Calendarito flow map"
             width={500}
             height={375}
