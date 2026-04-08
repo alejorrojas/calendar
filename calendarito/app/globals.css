@@ -68,3 +68,10 @@
     animation: none;
   }
 }
+
+/* Make Schedule-X frame match app card borders/radius. */
+.calendar-preview-shell .sx__calendar-wrapper .sx__calendar {
+  border: 1px solid #ececec !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}

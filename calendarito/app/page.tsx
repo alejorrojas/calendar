@@ -150,6 +150,18 @@ export default function HomePage() {
             priority
           />
         </motion.div>
+
+        <p className="mx-auto max-w-[420px] text-xs text-[#999] pb-12">
+          We never store or view your events. They are created directly in your Google Calendar.{' '}
+          <Link href="/privacy" className="underline hover:text-[#0A0A0A]">
+            Privacy Policy
+          </Link>
+          {' '}and{' '}
+          <Link href="/terms" className="underline hover:text-[#0A0A0A]">
+            Terms of Service
+          </Link>
+          .
+        </p>
       </motion.section>
 
     </div>

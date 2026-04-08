@@ -471,7 +471,7 @@ export default function EmpezarPage() {
       </div>
 
       <section className="box-border flex flex-1 px-6 pb-14 pt-10">
-        <div className="mx-auto flex w-full max-w-[1280px] gap-8">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8 lg:flex-row">
 
           {/* ── Left column: form ── */}
           <div className="w-full max-w-[480px] shrink-0">
@@ -784,13 +784,22 @@ Dinner with Valentina on May 12`}
 
               {/* CTA */}
               {!authenticated ? (
-                <button
-                  onClick={() => { window.location.href = '/login?next=/empezar'; }}
-                  disabled={events.length === 0}
-                  className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
-                >
-                  Login to continue
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => { window.location.href = '/login?next=/empezar'; }}
+                    disabled={events.length === 0}
+                    className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
+                  >
+                    Login to continue
+                  </button>
+                  <p className="text-center text-[13px] text-[#999]">
+                    By logging in, you agree to our{' '}
+                    <Link href="/privacy" className="text-[#0A0A0A] hover:underline">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+                </div>
               ) : (
                 <button
                   onClick={handleSubmit}
@@ -846,9 +855,9 @@ Dinner with Valentina on May 12`}
           </div>{/* end left column */}
 
           {/* ── Right column: calendar preview ── */}
-          <div className="hidden min-w-0 flex-1 lg:block">
-            <div className="sticky top-[84px]">
-              <div className="overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-[0_4px_18px_rgba(0,0,0,0.04)]">
+          <div className="min-w-0 flex-1">
+            <div className="lg:sticky lg:top-[84px]">
+              <div className="rounded-2xl bg-white shadow-[0_4px_18px_rgba(0,0,0,0.04)]">
                 <CalendarPreview key={events.map(e => `${e.date}${e.summary}`).join('|')} events={events} colorId={colorId} />
               </div>
               <div className="mt-3 flex items-center gap-2">

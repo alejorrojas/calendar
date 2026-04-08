@@ -79,6 +79,13 @@ export default function LoginPageClient() {
           <p className="mt-2 text-sm leading-6 text-[#555]">
             Continue with Google to connect your calendar and finish creating events.
           </p>
+          <p className="mt-4 text-[13px] text-[#999]">
+            By continuing, you agree to our{' '}
+            <Link href="/privacy" className="text-[#0A0A0A] hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
 
           <motion.button
             type="button"

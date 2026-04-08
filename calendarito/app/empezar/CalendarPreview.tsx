@@ -107,7 +107,7 @@ export default function CalendarPreview({ events, colorId }: Props) {
   });
 
   return (
-    <div>
+    <div className="calendar-preview-shell">
       <ScheduleXCalendar calendarApp={calendarApp} />
     </div>
   );
