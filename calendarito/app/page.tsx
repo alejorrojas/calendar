@@ -138,7 +138,8 @@ export default function HomePage() {
           }
           className="mx-auto mb-10 max-w-[460px] text-lg leading-[1.6] text-[#555]"
         >
-          Create events in your Google Calendar, using natural language, files, PDFs, or images. Share anything you want, and we handle the rest.
+          Create events in your Google Calendar, using natural language, files,
+          or images. Share anything you want, and we handle the rest.
         </motion.p>
 
         <motion.div

@@ -78,10 +78,12 @@ export default function HowItWorksPage() {
 
         <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-[28px] border border-[#E4E4E4] bg-[#F7F7F7] shadow-[0_12px_36px_rgba(0,0,0,0.1)]">
           <Image
-            src="/mapa-2.png"
+            src="/bloom-mapa-2.png"
             alt="Calendarito flow map"
             width={500}
             height={375}
+            quality={100}
+            priority
             className="block h-auto w-full"
           />
         </div>
