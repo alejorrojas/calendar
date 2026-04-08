@@ -294,7 +294,7 @@ export function CalendarPDFDemoAnimation() {
                     return (
                       <div
                         key={di}
-                        className="flex min-h-[36px] flex-col items-center pt-1"
+                        className="flex min-h-[52px] flex-col items-center pt-1"
                       >
                         {day !== null && (
                           <>

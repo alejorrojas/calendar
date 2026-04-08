@@ -183,7 +183,7 @@ export function CalendarDemoAnimation() {
             {/* Time grid */}
             <div className="pb-2">
               {HOURS.map((hour) => (
-                <div key={hour} className="flex" style={{ height: 44 }}>
+                <div key={hour} className="flex" style={{ height: 72 }}>
                   <div className="w-10 shrink-0 pr-2 pt-1 text-right text-[10px] leading-none text-[#CCCCCC]">
                     {hour}
                   </div>

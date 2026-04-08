@@ -76,10 +76,10 @@ export default function HowItWorksPage() {
           Calendar.
         </p>
 
-        <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-[28px] border border-[#E4E4E4] bg-[#F7F7F7] shadow-[0_12px_36px_rgba(0,0,0,0.1)]">
+        <div className="mx-auto w-full max-w-[500px] overflow-hidden rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.15)]">
           <Image
-            src="/bloom-mapa-2.png"
-            alt="Calendarito flow map"
+            src="/hero-2.png"
+            alt="Character organizing a calendar"
             width={500}
             height={375}
             quality={100}
@@ -121,6 +121,19 @@ export default function HowItWorksPage() {
           ))}
         </motion.div>
       </section>
+
+      <p className="mx-auto max-w-[420px] pb-12 text-center text-xs text-[#999]">
+        We never store or view your events. They are created directly in your
+        Google Calendar.{" "}
+        <Link href="/privacy" className="underline hover:text-[#0A0A0A]">
+          Privacy Policy
+        </Link>{" "}
+        and{" "}
+        <Link href="/terms" className="underline hover:text-[#0A0A0A]">
+          Terms of Service
+        </Link>
+        .
+      </p>
     </main>
   );
 }

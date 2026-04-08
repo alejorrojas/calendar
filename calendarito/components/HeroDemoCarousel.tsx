@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDemoAnimation } from "@/components/CalendarDemoAnimation";
 import { CalendarPDFDemoAnimation } from "@/components/CalendarPDFDemoAnimation";
+import { CalendarImageDemoAnimation } from "@/components/CalendarImageDemoAnimation";
 
 // How long each slide stays before auto-advancing
-const SLIDE_DURATIONS = [9500, 17000];
+const SLIDE_DURATIONS = [9500, 17000, 14000];
 
 const slides = [
-  { key: "text", Component: CalendarDemoAnimation },
-  { key: "pdf", Component: CalendarPDFDemoAnimation },
+  { key: "text",  Component: CalendarDemoAnimation      },
+  { key: "pdf",   Component: CalendarPDFDemoAnimation   },
+  { key: "image", Component: CalendarImageDemoAnimation },
 ];
 
 export function HeroDemoCarousel() {
@@ -24,7 +26,7 @@ export function HeroDemoCarousel() {
   }, [active]);
 
   return (
-    <div className="relative w-full max-w-[820px]">
+    <div className="relative w-full max-w-[820px] min-h-[520px]">
       <AnimatePresence mode="wait">
         {slides.map(
           ({ key, Component }, i) =>
