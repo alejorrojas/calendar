@@ -269,6 +269,7 @@ export default function EmpezarPage() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthenticated(Boolean(session));
       setSupabaseAccessToken(session?.access_token ?? '');
+      if (session?.user?.email) setUserEmail(session.user.email);
       const providerToken = session?.provider_token;
       if (providerToken) {
         setGoogleAccessToken(providerToken);
