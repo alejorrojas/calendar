@@ -10,10 +10,11 @@ import '@schedule-x/theme-default/dist/index.css';
 // Install polyfill on globalThis when native Temporal is unavailable.
 // Schedule-x reads Temporal as a bare global, so it must be the same instance
 // used to create event objects — otherwise instanceof checks fail on mobile.
-if (typeof globalThis.Temporal === 'undefined') {
-  (globalThis as unknown as { Temporal: typeof TemporalPolyfill }).Temporal = TemporalPolyfill;
+const g = globalThis as unknown as { Temporal?: typeof TemporalPolyfill };
+if (typeof g.Temporal === 'undefined') {
+  g.Temporal = TemporalPolyfill;
 }
-const Temporal = globalThis.Temporal as typeof TemporalPolyfill;
+const Temporal = g.Temporal as typeof TemporalPolyfill;
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
