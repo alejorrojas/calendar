@@ -183,6 +183,10 @@ export default function EmpezarPage() {
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
   const [storageHydrated, setStorageHydrated] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const selectedCalendar = calendars.find((calendar) => calendar.id === calendarId);
+  const selectedCalendarLabel = selectedCalendar?.name ?? '';
+  const calendarSelectValue = newCalendarName ? '__new__' : (selectedCalendar ? calendarId : '');
+  const calendarSelectLabel = calendarSelectValue === '__new__' ? '+ Add new calendar...' : selectedCalendarLabel;
 
   useEffect(() => {
     const savedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
@@ -697,7 +701,7 @@ Dinner with Valentina on May 12`}
                 <>
                   <StepCard num={2} title="Calendar">
                     <Select
-                      value={newCalendarName ? '__new__' : (calendars.some(c => c.id === calendarId) ? calendarId : '')}
+                      value={calendarSelectValue}
                       onValueChange={val => {
                         if (val === '__new__') {
                           setCalendarId('');
@@ -709,7 +713,9 @@ Dinner with Valentina on May 12`}
                       }}
                     >
                       <SelectTrigger className="w-full rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-[14px] py-[11px] text-sm text-[#0A0A0A] focus:border-[#0A0A0A] focus:ring-0 h-auto">
-                        <SelectValue placeholder="Select a calendar" />
+                        <SelectValue placeholder="Select a calendar">
+                          {calendarSelectLabel || undefined}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {calendars.map(c => (
@@ -769,7 +775,7 @@ Dinner with Valentina on May 12`}
                 <button
                   onClick={handleSubmit}
                   disabled={loading || extracting || events.length === 0 || !calendarId}
-                  className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
+                  className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E8E815]/45 disabled:text-[#0A0A0A]/55"
                 >
                   {loading
                     ? (newCalendarName.trim() ? 'Creating calendar & events...' : 'Creating in Google Calendar...')
@@ -838,7 +844,7 @@ Dinner with Valentina on May 12`}
               </div>
               {events.length === 0 && (
                 <p className="mt-3 text-center text-xs text-[#BBB]">
-                  Your events will appear here before creation
+                  Your events will appear here before creation. This is only a preview, not your real calendar.
                 </p>
               )}
             </div>
