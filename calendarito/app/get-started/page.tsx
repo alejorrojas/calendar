@@ -471,7 +471,10 @@ export default function EmpezarPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          events,
+          events: events.map((e) => ({
+            ...e,
+            timezone: e.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+          })),
           calendarId: targetCalendarId,
           colorId,
           notifyDays,
