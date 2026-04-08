@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
       created.push({ summary: event.summary, date: row.date, link: inserted.htmlLink });
     }
 
-    const userId = session.user.id;
-    const userEmail = session.user.email ?? 'unknown';
+    const userId = session?.user.id ?? null;
+    const userEmail = session?.user.email ?? 'unknown';
     const snapshot = [...created];
 
     after(async () => {
