@@ -697,7 +697,7 @@ Dinner with Valentina on May 12`}
                 <>
                   <StepCard num={2} title="Calendar">
                     <Select
-                      value={newCalendarName ? '__new__' : calendarId}
+                      value={newCalendarName ? '__new__' : (calendars.some(c => c.id === calendarId) ? calendarId : '')}
                       onValueChange={val => {
                         if (val === '__new__') {
                           setCalendarId('');
@@ -715,7 +715,7 @@ Dinner with Valentina on May 12`}
                         {calendars.map(c => (
                           <SelectItem key={c.id} value={c.id ?? ''}>{c.name}</SelectItem>
                         ))}
-                        <SelectItem value="__new__" className="text-[#555] italic">
+                        <SelectItem value="__new__" className="text-[#555]">
                           + Add new calendar...
                         </SelectItem>
                       </SelectContent>
