@@ -607,6 +607,8 @@ export default function EmpezarPage() {
                     onClearFile={handleClearFile}
                     onExtract={() => void handleExtract()}
                     extracting={extracting}
+                    authenticated={!!authenticated}
+                    hasExtracted={events.length > 0}
                   />
 
                   {events.length > 0 && (
@@ -861,7 +863,8 @@ export default function EmpezarPage() {
                       onClick={() => {
                         window.location.href = "/login?next=/get-started";
                       }}
-                      className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512]"
+                      disabled={events.length === 0}
+                      className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E8E815]/45 disabled:text-[#0A0A0A]/55"
                     >
                       Login to continue
                     </button>

@@ -8,6 +8,8 @@ export interface PendingFileSource {
   filename: string;
 }
 
+const GUEST_MAX_CHARS = 100;
+
 interface UnifiedSourceInputProps {
   inputText: string;
   onInputTextChange: (text: string) => void;
@@ -16,6 +18,8 @@ interface UnifiedSourceInputProps {
   onClearFile: () => void;
   onExtract: () => void;
   extracting: boolean;
+  authenticated: boolean;
+  hasExtracted: boolean;
 }
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -35,8 +39,18 @@ function FileTypeIcon({ mediaType }: { mediaType: string }) {
     return (
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round"/>
-          <path d="M14 2v6h6M9 13h6M9 17h4" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round"/>
+          <path
+            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+            stroke="#EF4444"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M14 2v6h6M9 13h6M9 17h4"
+            stroke="#EF4444"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       </div>
     );
@@ -45,8 +59,18 @@ function FileTypeIcon({ mediaType }: { mediaType: string }) {
     return (
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
-          <path d="M14 2v6h6M9 13h6M9 17h4" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
+          <path
+            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+            stroke="#3B82F6"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M14 2v6h6M9 13h6M9 17h4"
+            stroke="#3B82F6"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       </div>
     );
@@ -55,8 +79,18 @@ function FileTypeIcon({ mediaType }: { mediaType: string }) {
     return (
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F5]">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#888" strokeWidth="1.8" strokeLinecap="round"/>
-          <path d="M14 2v6h6M9 13h6M9 17h4" stroke="#888" strokeWidth="1.8" strokeLinecap="round"/>
+          <path
+            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+            stroke="#888"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M14 2v6h6M9 13h6M9 17h4"
+            stroke="#888"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       </div>
     );
@@ -64,8 +98,18 @@ function FileTypeIcon({ mediaType }: { mediaType: string }) {
   return (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F5F5F5]">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
-        <path d="M14 2v6h6" stroke="#999" strokeWidth="1.8" strokeLinecap="round"/>
+        <path
+          d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+          stroke="#999"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 2v6h6"
+          stroke="#999"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
       </svg>
     </div>
   );
@@ -79,10 +123,14 @@ export function UnifiedSourceInput({
   onClearFile,
   onExtract,
   extracting,
+  authenticated,
+  hasExtracted,
 }: UnifiedSourceInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileSizeError, setFileSizeError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isGuestLocked = !authenticated && hasExtracted;
 
   const processFile = useCallback(
     async (file: File) => {
@@ -175,8 +223,8 @@ export function UnifiedSourceInput({
                 {pendingFileSource.mediaType.startsWith("image/")
                   ? "Image"
                   : pendingFileSource.mediaType === "application/pdf"
-                  ? "PDF"
-                  : "File"}{" "}
+                    ? "PDF"
+                    : "File"}{" "}
                 · Ready to extract
               </p>
             </div>
@@ -187,7 +235,12 @@ export function UnifiedSourceInput({
               className="shrink-0 text-[#BBBBBB] transition-colors hover:text-[#0A0A0A]"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                <path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -196,23 +249,44 @@ export function UnifiedSourceInput({
         {/* Textarea */}
         <textarea
           value={inputText}
-          onChange={(e) => onInputTextChange(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (!authenticated && val.length > GUEST_MAX_CHARS) return;
+            onInputTextChange(val);
+          }}
           onPaste={handlePaste}
+          disabled={isGuestLocked}
           placeholder={
-            pendingFileSource
-              ? "Add a note (optional)…"
-              : "Dinner with Ana on friday\nDoctor appt next tuesday at 3pm\nOr drop / paste a file or image…"
+            isGuestLocked
+              ? "Login to add more events…"
+              : pendingFileSource
+                ? "Add a note (optional)…"
+                : "Team sync Mon 10 am\nMath exam next Friday\nOr drop / paste a file or image…"
           }
           rows={4}
-          className="w-full resize-none bg-transparent text-sm leading-relaxed text-[#0A0A0A] outline-none placeholder:text-[#C0C0C0]"
+          className="w-full resize-none bg-transparent text-sm leading-relaxed text-[#0A0A0A] outline-none placeholder:text-[#C0C0C0] disabled:cursor-not-allowed disabled:opacity-50"
         />
+
+        {/* Char counter for guests */}
+        {!authenticated && !isGuestLocked && inputText.length > 60 && (
+          <p
+            className={`mb-1 text-right text-[11px] ${
+              inputText.length >= GUEST_MAX_CHARS
+                ? "text-red-400"
+                : "text-[#CCCCCC]"
+            }`}
+          >
+            {inputText.length}/{GUEST_MAX_CHARS}
+          </p>
+        )}
 
         {/* Bottom action row */}
         <div className="mt-1 flex items-center justify-between">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-[#AAAAAA] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+            disabled={isGuestLocked}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-[#AAAAAA] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
               <path
@@ -229,7 +303,7 @@ export function UnifiedSourceInput({
           <button
             type="button"
             onClick={onExtract}
-            disabled={!canExtract}
+            disabled={!canExtract || isGuestLocked}
             aria-label={extracting ? "Extracting…" : "Extract events"}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8E815] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5]"
           >
@@ -250,6 +324,24 @@ export function UnifiedSourceInput({
                   strokeLinecap="round"
                   strokeDasharray="28 28"
                   strokeDashoffset="14"
+                />
+              </svg>
+            ) : isGuestLocked ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <rect
+                  x="3"
+                  y="11"
+                  width="18"
+                  height="11"
+                  rx="2"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M7 11V7a5 5 0 0110 0v4"
+                  stroke="#AAAAAA"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                 />
               </svg>
             ) : (
