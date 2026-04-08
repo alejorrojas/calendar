@@ -1,7 +1,10 @@
+import { notifyAdmin } from '@/lib/email';
 import { getOAuthClient, nextDay } from '@/lib/google';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { incrementUsageCounters } from '@/lib/usage-tracking';
+import { firstEventTemplate } from '@/templates/first-event';
 import { google } from 'googleapis';
+import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface EventRow {
@@ -85,7 +88,35 @@ export async function POST(req: NextRequest) {
       created.push({ summary: event.summary, date: row.date, link: inserted.htmlLink });
     }
 
-    await incrementUsageCounters(supabase, session.user.id, { eventsCreated: created.length });
+    const userId = session.user.id;
+    const userEmail = session.user.email ?? 'unknown';
+    const snapshot = [...created];
+
+    after(async () => {
+      const supabaseBg = await createSupabaseServerClient();
+      const { data: prevCounters } = await supabaseBg
+        .from('usage_counters')
+        .select('events_created_count')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      await incrementUsageCounters(supabaseBg, userId, { eventsCreated: snapshot.length });
+
+      const isFirstBatch = !prevCounters || prevCounters.events_created_count === 0;
+      if (isFirstBatch && snapshot.length > 0) {
+        const firstEvent = snapshot[0];
+        const { subject, html } = firstEventTemplate({
+          userEmail,
+          eventSummary: firstEvent.summary,
+          eventDate: firstEvent.date,
+          calendarId,
+          eventCount: snapshot.length,
+        });
+        await notifyAdmin(subject, html).catch((err) =>
+          console.error('[events] Failed to send first-event email:', err)
+        );
+      }
+    });
 
     return NextResponse.json({ created });
   } catch (err) {
