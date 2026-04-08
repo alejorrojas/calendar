@@ -50,7 +50,16 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id ?? null;
+
+    // Fallback: accept Bearer token from extension
+    let userId = session?.user?.id ?? null;
+    if (!userId) {
+      const bearer = req.headers.get('authorization')?.replace('Bearer ', '');
+      if (bearer) {
+        const { data } = await supabase.auth.getUser(bearer);
+        userId = data.user?.id ?? null;
+      }
+    }
 
     const body = await req.json();
     const { sourceType, inputText, fileData, mediaType, filename } = body as {
