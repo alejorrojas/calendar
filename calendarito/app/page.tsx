@@ -8,13 +8,12 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 function WavySVG() {
   return (
     <svg
-      width="160"
-      height="20"
-      viewBox="0 0 160 20"
+      viewBox="0 0 100 20"
       fill="none"
-      className="ml-1.5 inline-block align-middle"
+      className="block h-3 w-full"
+      preserveAspectRatio="none"
     >
-      <path d="M2 14 C22 4, 42 24, 62 14 S102 4, 122 14 S142 24, 158 14" stroke="#E8E815" strokeWidth="4" strokeLinecap="round" fill="none"/>
+      <path d="M2 14 C14 4, 26 24, 38 14 S62 4, 74 14 S86 24, 98 14" stroke="#E8E815" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -77,8 +76,15 @@ export default function HomePage() {
       <section className="flex flex-1 flex-col items-center px-6 pt-[60px] text-center">
         <h1 className="mx-auto mb-7 max-w-[820px] font-heading text-[clamp(44px,7vw,72px)] leading-[1.05] font-black tracking-[-0.04em] text-[#0A0A0A]">
           Drop in anything,<br />
-          get calendar<br />
-          events<WavySVG />
+          get{' '}
+          <span className="relative inline-block pb-2">
+            calendar
+            <span className="pointer-events-none absolute right-0 bottom-0 left-0">
+              <WavySVG />
+            </span>
+          </span>
+          <br />
+          events
         </h1>
 
         <p className="mx-auto mb-10 max-w-[460px] text-lg leading-[1.6] text-[#555]">
