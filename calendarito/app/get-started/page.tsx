@@ -49,6 +49,7 @@ interface EventRow {
   timezone?: string;
   description?: string;
   location?: string;
+  invites?: string[];
   colorId?: string;
 }
 
@@ -66,6 +67,22 @@ interface DraftState {
 }
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeInviteEmails(value: unknown): string[] {
+  const candidates = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[,\n;\s]+/)
+      : [];
+  const unique = new Set<string>();
+  for (const raw of candidates) {
+    if (typeof raw !== "string") continue;
+    const normalized = raw.trim().toLowerCase();
+    if (EMAIL_REGEX.test(normalized)) unique.add(normalized);
+  }
+  return Array.from(unique);
+}
 
 function normalizeDateOnly(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -228,7 +245,9 @@ export default function EmpezarPage() {
 
         const normalizedEvents: EventRow[] = parsed.flatMap((item) => {
           if (!item || typeof item !== "object") return [];
-          const maybeEvent = item as Partial<EventRow>;
+          const maybeEvent = item as Partial<EventRow> & {
+            "@invites"?: unknown;
+          };
           const normalizedDate = normalizeDateOnly(maybeEvent.date);
           if (
             !normalizedDate ||
@@ -248,6 +267,9 @@ export default function EmpezarPage() {
               timezone: maybeEvent.timezone,
               description: maybeEvent.description,
               location: maybeEvent.location,
+              invites: normalizeInviteEmails(
+                maybeEvent.invites ?? maybeEvent["@invites"],
+              ),
               colorId:
                 typeof maybeEvent.colorId === "string"
                   ? maybeEvent.colorId
@@ -384,7 +406,28 @@ export default function EmpezarPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not extract events");
-      const extractedEvents = (data.events ?? []) as EventRow[];
+      const extractedEvents = (data.events ?? []).flatMap((item: unknown) => {
+        if (!item || typeof item !== "object") return [];
+        const maybeEvent = item as Partial<EventRow> & { "@invites"?: unknown };
+        const normalizedDate = normalizeDateOnly(maybeEvent.date);
+        if (!normalizedDate || typeof maybeEvent.summary !== "string") return [];
+        return [
+          {
+            summary: maybeEvent.summary,
+            date: normalizedDate,
+            allDay: maybeEvent.allDay !== false,
+            startTime: maybeEvent.startTime,
+            endTime: maybeEvent.endTime,
+            timezone: maybeEvent.timezone,
+            description: maybeEvent.description,
+            location: maybeEvent.location,
+            invites: normalizeInviteEmails(
+              maybeEvent.invites ?? maybeEvent["@invites"],
+            ),
+            colorId: maybeEvent.colorId,
+          } satisfies EventRow,
+        ];
+      });
       setEvents(extractedEvents);
       persistExtractedEvents(extractedEvents);
       setExtractWarnings(data.warnings ?? []);
@@ -638,6 +681,12 @@ export default function EmpezarPage() {
                                 <p className="text-[11px] text-[#888]">
                                   {eventLabel(event)}
                                 </p>
+                                {event.invites && event.invites.length > 0 && (
+                                  <p className="text-[11px] text-[#888]">
+                                    {event.invites.length} invite
+                                    {event.invites.length !== 1 ? "s" : ""}
+                                  </p>
+                                )}
                               </div>
                               <div className="ml-3 flex items-center gap-2">
                                 <span
@@ -679,6 +728,18 @@ export default function EmpezarPage() {
                                   }
                                   className="px-3 py-2 text-xs"
                                   placeholder="Event title"
+                                />
+                                <Input
+                                  value={event.invites?.join(", ") ?? ""}
+                                  onChange={(e) =>
+                                    updateEvent(i, {
+                                      invites: normalizeInviteEmails(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="px-3 py-2 text-xs"
+                                  placeholder="Invites (emails separados por coma)"
                                 />
                                 <div className="grid grid-cols-3 gap-2">
                                   <Input

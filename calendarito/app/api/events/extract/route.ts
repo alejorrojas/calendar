@@ -7,6 +7,7 @@ import { incrementUsageCounters, logEventGeneration, logUpload, normalizeTokenUs
 
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getCurrentDateTool() {
   const now = new Date();
@@ -29,6 +30,8 @@ const extractedEventSchema = z.object({
   timezone: z.string().nullable().describe('Timezone, for example America/Argentina/Buenos_Aires, or null'),
   description: z.string().nullable().describe('Optional description or null'),
   location: z.string().nullable().describe('Optional location or null'),
+  invites: z.array(z.string().trim().toLowerCase().regex(EMAIL_REGEX)).default([])
+    .describe('List of attendee emails explicitly mentioned as invitees for this event'),
 });
 
 const extractionSchema = z.object({
@@ -44,6 +47,16 @@ function estimateDataUrlSizeBytes(dataUrl: string): number | null {
   const base64 = dataUrl.slice(commaIndex + 1);
   const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
   return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
+}
+
+function normalizeInviteEmails(emails: string[] | null | undefined): string[] {
+  if (!emails?.length) return [];
+  const unique = new Set<string>();
+  for (const email of emails) {
+    const normalized = email.trim().toLowerCase();
+    if (EMAIL_REGEX.test(normalized)) unique.add(normalized);
+  }
+  return Array.from(unique);
 }
 
 export async function POST(req: NextRequest) {
@@ -128,10 +141,23 @@ Strict rules:
 - If time is ambiguous or unclear, set allDay=true and set startTime/endTime/timezone to null.
 - If an exact date is missing, omit that event and add a warning.
 - Do not invent critical data (date, time, location, or attendees).
+- If attendee emails are explicitly mentioned as part of the meeting/event, return them under "invites".
+- If there are no explicit attendee emails for an event, return "invites": [].
 `,
       messages: [{ role: 'user', content: userContent }],
       schema: extractionSchema,
     });
+
+    const normalizedObject = {
+      ...result.object,
+      events: result.object.events.map((event) => {
+        const invites = normalizeInviteEmails(event.invites);
+        return {
+          ...event,
+          invites,
+        };
+      }),
+    };
 
     if (userId) {
       const source = sourceType === 'text' ? 'text' : mediaType?.startsWith('image/') ? 'image' : 'file';
@@ -156,8 +182,8 @@ Strict rules:
         inputFileName: filename ?? null,
         inputFileMime: mediaType ?? null,
         inputFileSizeBytes: fileSize,
-        outputJson: result.object,
-        warnings: result.object.warnings,
+        outputJson: normalizedObject,
+        warnings: normalizedObject.warnings,
         status: 'success',
         providerUsageRaw: result.usage,
         inputTokens: usage.inputTokens,
@@ -175,7 +201,7 @@ Strict rules:
       });
     }
 
-    return NextResponse.json(result.object);
+    return NextResponse.json(normalizedObject);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error extracting events';
     return NextResponse.json({ error: message }, { status: 500 });

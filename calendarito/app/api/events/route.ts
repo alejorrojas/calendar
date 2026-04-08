@@ -18,6 +18,8 @@ interface EventRow {
   timezone?: string;
   description?: string;
   location?: string;
+  invites?: string[];
+  '@invites'?: string[];
   colorId?: string;
   reminderMinutes?: number;
 }
@@ -28,6 +30,18 @@ interface EventsPayload {
   colorId: string;
   notifyDays: number;
   notifyHour: number;
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeInviteEmails(emails: string[] | null | undefined): string[] {
+  if (!emails?.length) return [];
+  const unique = new Set<string>();
+  for (const email of emails) {
+    const normalized = email.trim().toLowerCase();
+    if (EMAIL_REGEX.test(normalized)) unique.add(normalized);
+  }
+  return Array.from(unique);
 }
 
 export async function POST(req: NextRequest) {
@@ -61,6 +75,7 @@ export async function POST(req: NextRequest) {
         row.summary?.trim() ||
         `${row.topic ?? ''}${row.topic && row.name ? ' - ' : ''}${row.name ?? ''}`.trim() ||
         'Untitled event';
+      const inviteEmails = normalizeInviteEmails(row.invites ?? row['@invites']);
       const isTimed = row.allDay === false && Boolean(row.startTime);
       const eventColorId = row.colorId ?? colorId;
       const reminderValue = row.reminderMinutes ?? notifyMinutes;
@@ -85,6 +100,9 @@ export async function POST(req: NextRequest) {
         end,
         ...(row.description ? { description: row.description } : {}),
         ...(row.location ? { location: row.location } : {}),
+        ...(inviteEmails.length > 0
+          ? { attendees: inviteEmails.map((email) => ({ email })) }
+          : {}),
         reminders: { useDefault: false, overrides: [{ method: 'email', minutes: reminderValue }] },
       };
       const res = await calendar.events.insert({ calendarId, requestBody: event });
