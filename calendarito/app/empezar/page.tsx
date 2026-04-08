@@ -1,9 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GOOGLE_CALENDAR_SCOPES } from '@/lib/google-oauth';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+
+const CalendarPreview = dynamic(() => import('./CalendarPreview'), { ssr: false });
 
 const COLORS = [
   { id: '1', name: 'Lavender', swatchClass: 'bg-[#7986cb]' },
@@ -46,6 +49,23 @@ interface DraftState {
   colorId: string;
   notifyDays: number;
   notifyHour: number;
+}
+
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeDateOnly(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePrefixMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T\s].+$/);
+  if (datePrefixMatch && DATE_ONLY_REGEX.test(datePrefixMatch[1])) {
+    return datePrefixMatch[1];
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
 }
 
 function eventLabel(event: EventRow): string {
@@ -107,8 +127,35 @@ export default function EmpezarPage() {
   useEffect(() => {
     const savedEvents = window.localStorage.getItem(EVENTS_STORAGE_KEY);
     if (savedEvents) {
-      try { setEvents(JSON.parse(savedEvents) as EventRow[]); }
-      catch { window.localStorage.removeItem(EVENTS_STORAGE_KEY); }
+      try {
+        const parsed = JSON.parse(savedEvents) as unknown;
+        if (!Array.isArray(parsed)) throw new Error('Invalid events payload');
+
+        const normalizedEvents: EventRow[] = parsed.flatMap((item) => {
+          if (!item || typeof item !== 'object') return [];
+          const maybeEvent = item as Partial<EventRow>;
+          const normalizedDate = normalizeDateOnly(maybeEvent.date);
+          if (!normalizedDate || typeof maybeEvent.summary !== 'string' || !maybeEvent.summary.trim()) {
+            return [];
+          }
+
+          return [{
+            summary: maybeEvent.summary,
+            date: normalizedDate,
+            allDay: maybeEvent.allDay !== false,
+            startTime: maybeEvent.startTime,
+            endTime: maybeEvent.endTime,
+            timezone: maybeEvent.timezone,
+            description: maybeEvent.description,
+            location: maybeEvent.location,
+          }];
+        });
+
+        setEvents(normalizedEvents);
+        window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(normalizedEvents));
+      } catch {
+        window.localStorage.removeItem(EVENTS_STORAGE_KEY);
+      }
     }
     const savedDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (savedDraft) {
@@ -306,8 +353,11 @@ export default function EmpezarPage() {
         </nav>
       </div>
 
-      <section className="box-border flex flex-1 justify-center px-6 pb-14 pt-10">
-        <div className="w-full max-w-[640px]">
+      <section className="box-border flex flex-1 px-6 pb-14 pt-10">
+        <div className="mx-auto flex w-full max-w-[1280px] gap-8">
+
+          {/* ── Left column: form ── */}
+          <div className="w-full max-w-[480px] shrink-0">
 
           {/* Errors / warnings */}
           {error && (
@@ -549,6 +599,30 @@ export default function EmpezarPage() {
               </button>
             </article>
           )}
+          </div>{/* end left column */}
+
+          {/* ── Right column: calendar preview ── */}
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <div className="sticky top-[84px]">
+              <div className="mb-3 flex items-center gap-2">
+                <p className="font-heading text-xs font-semibold tracking-[0.06em] text-[#999] uppercase">Vista previa</p>
+                {events.length > 0 && (
+                  <span className="rounded-full bg-[#E8E815] px-2 py-0.5 font-heading text-[10px] font-bold text-[#0A0A0A]">
+                    {events.length} evento{events.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-[0_4px_18px_rgba(0,0,0,0.04)]">
+                <CalendarPreview key={events.map(e => `${e.date}${e.summary}`).join('|')} events={events} colorId={colorId} />
+              </div>
+              {events.length === 0 && (
+                <p className="mt-3 text-center text-xs text-[#BBB]">
+                  Acá vas a ver los eventos antes de crearlos
+                </p>
+              )}
+            </div>
+          </div>
+
         </div>
       </section>
     </main>

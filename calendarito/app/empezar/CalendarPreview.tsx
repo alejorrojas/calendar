@@ -1,0 +1,103 @@
+'use client';
+
+import { useMemo } from 'react';
+import { createViewMonthGrid } from '@schedule-x/calendar';
+import { createEventModalPlugin } from '@schedule-x/event-modal';
+import { ScheduleXCalendar, useNextCalendarApp } from '@schedule-x/react';
+import '@schedule-x/theme-default/dist/index.css';
+
+// Temporal is a Stage 3 global — TypeScript doesn't include its types by default
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { Temporal } = globalThis as any;
+
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+interface EventRow {
+  summary: string;
+  date: string;
+  allDay: boolean;
+  startTime?: string;
+  endTime?: string;
+}
+
+const COLOR_MAP: Record<string, string> = {
+  '1': '#7986cb', '2': '#33b679', '3': '#8e24aa',
+  '4': '#e67c73', '5': '#f6c026', '6': '#f5511d',
+  '7': '#039be5', '8': '#3f51b5', '9': '#0b8043',
+  '10': '#d60000', '11': '#e67c73',
+};
+
+interface Props {
+  events: EventRow[];
+  colorId: string;
+}
+
+function normalizeDateOnly(value: string): string | null {
+  const trimmed = value.trim();
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datetimeMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T\s].+$/);
+  if (datetimeMatch && DATE_ONLY_REGEX.test(datetimeMatch[1])) {
+    return datetimeMatch[1];
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function toTemporalStart(dateOnly: string, allDay: boolean, time?: string) {
+  if (allDay || !time) return Temporal.PlainDate.from(dateOnly);
+  return Temporal.ZonedDateTime.from(`${dateOnly}T${time}:00[UTC]`);
+}
+
+function toTemporalEnd(dateOnly: string, allDay: boolean, time?: string) {
+  if (allDay || !time) return Temporal.PlainDate.from(dateOnly);
+  return Temporal.ZonedDateTime.from(`${dateOnly}T${time}:00[UTC]`);
+}
+
+export default function CalendarPreview({ events, colorId }: Props) {
+  const color = COLOR_MAP[colorId] ?? '#8e24aa';
+
+  const calendarEvents = useMemo(
+    () =>
+      events.reduce<Array<{ id: string; title: string; start: unknown; end: unknown; calendarId: string }>>(
+        (acc, event, index) => {
+          const dateOnly = normalizeDateOnly(event.date);
+          if (!dateOnly) return acc;
+
+          const isAllDay = event.allDay !== false;
+          acc.push({
+            id: String(index),
+            title: event.summary,
+            start: toTemporalStart(dateOnly, isAllDay, event.startTime),
+            end: toTemporalEnd(dateOnly, isAllDay, event.endTime),
+            calendarId: 'preview',
+          });
+          return acc;
+        },
+        []
+      ),
+    [events]
+  );
+
+  const calendarApp = useNextCalendarApp({
+    views: [createViewMonthGrid()],
+    defaultView: 'month-grid',
+    plugins: [createEventModalPlugin()],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    events: calendarEvents as any,
+    calendars: {
+      preview: {
+        colorName: 'preview',
+        lightColors: { main: color, container: `${color}22`, onContainer: color },
+      },
+    },
+  });
+
+  return (
+    <div>
+      <ScheduleXCalendar calendarApp={calendarApp} />
+    </div>
+  );
+}
