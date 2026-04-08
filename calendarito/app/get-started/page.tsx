@@ -36,7 +36,7 @@ const COLORS = [
 ];
 
 const EVENTS_STORAGE_KEY = "calendarito.extracted_events.v1";
-const DRAFT_STORAGE_KEY = "calendarito.extracted_draft.v1";
+const DRAFT_STORAGE_KEY = "calendarito.extracted_draft.v2";
 const GOOGLE_TOKEN_STORAGE_KEY = "calendarito.google_provider_token.v1";
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
@@ -191,7 +191,7 @@ export default function EmpezarPage() {
     useState("");
   const [pendingFileSource, setPendingFileSource] =
     useState<PendingFileSource | null>(null);
-  const [colorId, setColorId] = useState("3");
+  const [colorId, setColorId] = useState("7");
   const [notifyDays, setNotifyDays] = useState(14);
   const [notifyHour, setNotifyHour] = useState(9);
   const [loading, setLoading] = useState(false);
@@ -271,7 +271,7 @@ export default function EmpezarPage() {
         const draft = JSON.parse(savedDraft) as DraftState;
         setInputText(draft.inputText ?? "");
         setSourceSummary(draft.sourceSummary ?? "");
-        setColorId(draft.colorId ?? "3");
+        setColorId(draft.colorId ?? "7");
         setNotifyDays(draft.notifyDays ?? 14);
         setNotifyHour(draft.notifyHour ?? 9);
       } catch {
@@ -965,7 +965,7 @@ export default function EmpezarPage() {
             <div className="lg:sticky lg:top-[84px]">
               <div className="rounded-2xl bg-white shadow-[0_4px_18px_rgba(0,0,0,0.04)]">
                 <CalendarPreview
-                  key={events.map((e) => `${e.date}${e.summary}`).join("|")}
+                  key={events.map((e) => `${e.date}${e.summary}${e.colorId ?? colorId}`).join("|")}
                   events={events}
                   colorId={colorId}
                 />
