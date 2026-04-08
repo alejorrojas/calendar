@@ -34,7 +34,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session?.provider_token) {
+  // Fallback: accept provider_token from extension via header
+  const providerToken = session?.provider_token ?? req.headers.get('x-provider-token');
+
+  if (!providerToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = getOAuthClient();
-    client.setCredentials({ access_token: session.provider_token });
+    client.setCredentials({ access_token: providerToken });
     const calendar = google.calendar({ version: 'v3', auth: client });
 
     const created = [];
@@ -88,11 +91,13 @@ export async function POST(req: NextRequest) {
       created.push({ summary: event.summary, date: row.date, link: inserted.htmlLink });
     }
 
-    const userId = session.user.id;
-    const userEmail = session.user.email ?? 'unknown';
+    const userId = session?.user.id ?? null;
+    const userEmail = session?.user.email ?? 'unknown';
     const snapshot = [...created];
 
     after(async () => {
+      if (!userId) return;
+
       const supabaseBg = await createSupabaseServerClient();
       const { data: prevCounters } = await supabaseBg
         .from('usage_counters')
