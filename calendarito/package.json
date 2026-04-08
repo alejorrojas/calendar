@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.52",
+    "@schedule-x/calendar": "^4.3.1",
+    "@schedule-x/event-modal": "^4.3.1",
+    "@schedule-x/react": "^4.1.0",
+    "@schedule-x/theme-default": "^4.3.1",
+    "@supabase/ssr": "^0.10.0",
     "ai": "^6.0.152",
     "googleapis": "^171.4.0",
     "next": "16.2.2",

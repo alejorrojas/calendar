@@ -6,6 +6,18 @@ import { z } from 'zod';
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
+function getCurrentDateTool() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  return {
+    currentDate: `${year}-${month}-${day}`,
+    currentYear: year,
+  };
+}
+
 const extractedEventSchema = z.object({
   summary: z.string().min(1).describe('Título corto del evento'),
   date: z.string().regex(DATE_REGEX).describe('Fecha en formato YYYY-MM-DD'),
@@ -68,6 +80,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const { currentDate, currentYear } = getCurrentDateTool();
+
     const { object } = await generateObject({
       model: openai('gpt-4o'),
       system: `
@@ -82,6 +96,9 @@ Language behavior:
 
 Strict rules:
 - Dates must use YYYY-MM-DD.
+- Today's reference date is ${currentDate}.
+- If an event mentions a date without year, assume year ${currentYear}.
+- Resolve relative expressions (e.g. "este miércoles", "mañana", "la semana que viene") using the reference date above.
 - Times must use HH:mm (24-hour format).
 - If time is ambiguous or unclear, set allDay=true and set startTime/endTime/timezone to null.
 - If an exact date is missing, omit that event and add a warning.
