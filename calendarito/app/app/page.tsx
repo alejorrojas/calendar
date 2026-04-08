@@ -17,22 +17,24 @@ const COLORS = [
   { id: '11', name: 'Flamingo', swatchClass: 'bg-[#e67c73]' },
 ];
 
-interface EventRow { name: string; topic: string; date: string }
+interface EventRow {
+  summary: string;
+  date: string;
+  allDay: boolean;
+  startTime?: string;
+  endTime?: string;
+  timezone?: string;
+  description?: string;
+  location?: string;
+}
+
 interface Calendar { id: string; name: string }
 
-function parseCSV(text: string): EventRow[] {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
-  for (const col of ['name', 'topic', 'date']) {
-    if (!headers.includes(col)) throw new Error(`El CSV debe tener la columna "${col}"`);
+function eventLabel(event: EventRow): string {
+  if (!event.allDay && event.startTime) {
+    return `${event.date} ${event.startTime}${event.endTime ? `-${event.endTime}` : ''}`;
   }
-  return lines.slice(1).map((line, i) => {
-    const values = line.split(',').map(v => v.trim());
-    const row = Object.fromEntries(headers.map((h, j) => [h, values[j] ?? ''])) as unknown as EventRow;
-    if (!row.name || !row.topic) throw new Error(`Fila ${i + 2}: faltan campos`);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) throw new Error(`Fila ${i + 2}: "date" debe ser YYYY-MM-DD`);
-    return row;
-  });
+  return event.date;
 }
 
 // ── Shared primitives ──────────────────────────────────────────────────────────
@@ -99,7 +101,12 @@ export default function AppPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [calendars, setCalendars]   = useState<Calendar[]>([]);
   const [events, setEvents]         = useState<EventRow[]>([]);
-  const [csvError, setCsvError]     = useState('');
+  const [extractError, setExtractError] = useState('');
+  const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
+  const [sourceType, setSourceType] = useState<'file' | 'text'>('file');
+  const [inputText, setInputText] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [sourceSummary, setSourceSummary] = useState('');
   const [calendarId, setCalendarId] = useState('');
   const [colorId, setColorId]       = useState('3');
   const [notifyDays, setNotifyDays] = useState(14);
@@ -124,16 +131,50 @@ export default function AppPage() {
     if (data.calendars) { setCalendars(data.calendars); setCalendarId(data.calendars[0]?.id ?? ''); }
   }
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function extractWithAI(formData: FormData) {
+    setExtracting(true);
+    setExtractError('');
+    setExtractWarnings([]);
+    setEvents([]);
+    try {
+      const res = await fetch('/api/events/extract', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo extraer eventos');
+      setEvents(data.events ?? []);
+      setExtractWarnings(data.warnings ?? []);
+      if (!data.events?.length) {
+        setExtractError('No encontramos eventos claros en la fuente enviada.');
+      }
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Error procesando la fuente con IA');
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCsvError(''); setEvents([]);
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try { setEvents(parseCSV(ev.target?.result as string)); }
-      catch (err) { setCsvError(err instanceof Error ? err.message : 'Error al leer el CSV'); }
-    };
-    reader.readAsText(file);
+    setSourceSummary(file.name);
+    const formData = new FormData();
+    formData.append('sourceType', 'file');
+    formData.append('file', file);
+    await extractWithAI(formData);
+  }
+
+  async function handleAnalyzeText() {
+    if (!inputText.trim()) {
+      setExtractError('Escribí algo para poder extraer eventos.');
+      return;
+    }
+    setSourceSummary('Texto libre');
+    const formData = new FormData();
+    formData.append('sourceType', 'text');
+    formData.append('inputText', inputText.trim());
+    await extractWithAI(formData);
   }
 
   async function handleSubmit() {
@@ -162,10 +203,10 @@ export default function AppPage() {
   const cardClass = 'rounded-[20px] border border-[#EBEBEB] bg-white p-7 shadow-[0_1px_4px_rgba(0,0,0,0.06)]';
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-app)] bg-[radial-gradient(circle,var(--dot)_1px,transparent_1px)] [background-size:22px_22px]">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-app)] bg-[radial-gradient(circle,var(--dot)_1px,transparent_1px)] pt-[68px] [background-size:22px_22px]">
 
       {/* Top bar */}
-      <div className="mx-auto box-border flex w-full max-w-[600px] items-center justify-between px-8 py-5">
+      <div className="fixed top-0 right-0 left-0 z-40 mx-auto box-border flex w-full max-w-[600px] items-center justify-between bg-[var(--bg-app)] bg-[radial-gradient(circle,var(--dot)_1px,transparent_1px)] px-8 pt-5 pb-0 [background-size:22px_22px]">
         <Logo />
         <button
           onClick={handleLogout}
@@ -184,34 +225,98 @@ export default function AppPage() {
               {error}
             </div>
           )}
+          {extractError && (
+            <div className="mb-4 rounded-xl border border-[#FFCDD2] bg-[#FFF0F0] px-4 py-3 text-[13px] text-[#C62828]">
+              {extractError}
+            </div>
+          )}
+          {extractWarnings.length > 0 && (
+            <div className="mb-4 rounded-xl border border-[#FFE082] bg-[#FFF9E6] px-4 py-3 text-[13px] text-[#8A6D1A]">
+              <p className="font-heading mb-1 text-sm font-semibold">Advertencias de extracción</p>
+              <ul className="space-y-0.5">
+                {extractWarnings.map((warning, idx) => (
+                  <li key={`${warning}-${idx}`}>- {warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* ── Form ── */}
           {!result && (
             <div className="flex flex-col gap-3">
 
-              {/* CSV */}
+              {/* Fuente de eventos */}
               <div className={cardClass}>
-                <Section label="1 · Archivo CSV">
-                  <div
-                    onClick={() => fileRef.current?.click()}
-                    className={`cursor-pointer rounded-[14px] border-[1.5px] border-dashed p-5 text-center transition-colors ${
-                      events.length > 0
-                        ? 'border-[#86EFAC] bg-[#F0FFF4]'
-                        : 'border-[#DDD] hover:border-[#0A0A0A]'
-                    }`}
-                  >
-                    {events.length > 0
-                      ? <p className="font-heading text-sm font-bold text-[#15803D]">✓ {events.length} eventos cargados</p>
-                      : <>
-                          <p className="font-heading mb-1 text-sm font-semibold text-[#0A0A0A]">Seleccionar CSV</p>
-                          <p className="text-xs text-[#999]">
-                            Columnas: <code className="rounded bg-[#F3F3F3] px-[5px] py-px">name</code>, <code className="rounded bg-[#F3F3F3] px-[5px] py-px">topic</code>, <code className="rounded bg-[#F3F3F3] px-[5px] py-px">date</code>
-                          </p>
-                        </>
-                    }
+                <Section label="1 · Fuente de eventos">
+                  <div className="mb-3 flex gap-2">
+                    <button
+                      onClick={() => setSourceType('file')}
+                      type="button"
+                      className={`font-heading cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        sourceType === 'file'
+                          ? 'bg-[#0A0A0A] text-white'
+                          : 'border border-[#DDD] bg-white text-[#555] hover:border-[#0A0A0A]'
+                      }`}
+                    >
+                      Subir archivo
+                    </button>
+                    <button
+                      onClick={() => setSourceType('text')}
+                      type="button"
+                      className={`font-heading cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                        sourceType === 'text'
+                          ? 'bg-[#0A0A0A] text-white'
+                          : 'border border-[#DDD] bg-white text-[#555] hover:border-[#0A0A0A]'
+                      }`}
+                    >
+                      Escribir texto
+                    </button>
                   </div>
-                  <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
-                  {csvError && <p className="mt-2 text-xs text-[#C62828]">{csvError}</p>}
+
+                  {sourceType === 'file' && (
+                    <>
+                      <div
+                        onClick={() => fileRef.current?.click()}
+                        className={`cursor-pointer rounded-[14px] border-[1.5px] border-dashed p-5 text-center transition-colors ${
+                          events.length > 0 && sourceSummary
+                            ? 'border-[#86EFAC] bg-[#F0FFF4]'
+                            : 'border-[#DDD] hover:border-[#0A0A0A]'
+                        }`}
+                      >
+                        {extracting
+                          ? <p className="font-heading text-sm font-bold text-[#0A0A0A]">Extrayendo eventos con IA...</p>
+                          : events.length > 0 && sourceSummary
+                          ? <p className="font-heading text-sm font-bold text-[#15803D]">✓ {events.length} eventos extraídos de {sourceSummary}</p>
+                          : <>
+                              <p className="font-heading mb-1 text-sm font-semibold text-[#0A0A0A]">Elegir cualquier archivo</p>
+                              <p className="text-xs text-[#999]">Soporta docs, texto, tablas e imágenes.</p>
+                            </>
+                        }
+                      </div>
+                      <input ref={fileRef} type="file" className="hidden" onChange={handleFile} />
+                    </>
+                  )}
+
+                  {sourceType === 'text' && (
+                    <>
+                      <textarea
+                        value={inputText}
+                        onChange={e => setInputText(e.target.value)}
+                        rows={6}
+                        placeholder="Ejemplo: reunión con Juan el próximo martes a las 10, demo el 18/04, pago de servicio el 25..."
+                        className="w-full resize-y rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-4 py-3 text-sm text-[#0A0A0A] outline-none transition-colors focus:border-[#0A0A0A]"
+                      />
+                      <button
+                        onClick={handleAnalyzeText}
+                        type="button"
+                        disabled={extracting}
+                        className="font-heading mt-2 w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3 text-sm font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
+                      >
+                        {extracting ? 'Extrayendo con IA...' : 'Extraer eventos desde texto'}
+                      </button>
+                    </>
+                  )}
+
                   {events.length > 0 && (
                     <div className="mt-2.5 max-h-40 overflow-y-auto rounded-[10px] border border-[#F0F0F0]">
                       {events.map((e, i) => (
@@ -219,8 +324,8 @@ export default function AppPage() {
                           key={i}
                           className={`flex justify-between px-3 py-[7px] ${i % 2 === 0 ? 'bg-[#FAFAFA]' : 'bg-white'} ${i < events.length - 1 ? 'border-b border-[#F5F5F5]' : ''}`}
                         >
-                          <span className="text-xs">{e.topic} — {e.name}</span>
-                          <span className="text-xs text-[#999]">{e.date}</span>
+                          <span className="text-xs">{e.summary}</span>
+                          <span className="text-xs text-[#999]">{eventLabel(e)}</span>
                         </div>
                       ))}
                     </div>
@@ -280,7 +385,7 @@ export default function AppPage() {
                 </Section>
               </div>
 
-              <YellowBtn onClick={handleSubmit} disabled={loading || events.length === 0 || !calendarId}>
+              <YellowBtn onClick={handleSubmit} disabled={loading || extracting || events.length === 0 || !calendarId}>
                 {loading ? 'Creando eventos...' : `Crear ${events.length > 0 ? events.length : ''} eventos →`}
               </YellowBtn>
             </div>
@@ -311,8 +416,16 @@ export default function AppPage() {
                   </div>
                 ))}
               </div>
-              <OutlineBtn onClick={() => { setResult(null); setEvents([]); if (fileRef.current) fileRef.current.value = ''; }}>
-                Cargar otro CSV
+              <OutlineBtn onClick={() => {
+                setResult(null);
+                setEvents([]);
+                setExtractWarnings([]);
+                setExtractError('');
+                setSourceSummary('');
+                setInputText('');
+                if (fileRef.current) fileRef.current.value = '';
+              }}>
+                Cargar más eventos
               </OutlineBtn>
             </div>
           )}

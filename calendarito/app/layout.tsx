@@ -16,7 +16,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Calendarito",
-  description: "Cargá un CSV y creá eventos en Google Calendar",
+  description: "Convertí archivos o texto libre en eventos de Google Calendar con ayuda de IA",
 };
 
 export default function RootLayout({

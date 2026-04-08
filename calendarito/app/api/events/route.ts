@@ -3,9 +3,18 @@ import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface EventRow {
-  name: string;
-  topic: string;
+  summary?: string;
+  name?: string;
+  topic?: string;
   date: string;
+  allDay?: boolean;
+  startTime?: string;
+  endTime?: string;
+  timezone?: string;
+  description?: string;
+  location?: string;
+  colorId?: string;
+  reminderMinutes?: number;
 }
 
 interface EventsPayload {
@@ -37,14 +46,42 @@ export async function POST(req: NextRequest) {
 
     const created = [];
     for (const row of events) {
+      const summary =
+        row.summary?.trim() ||
+        `${row.topic ?? ''}${row.topic && row.name ? ' - ' : ''}${row.name ?? ''}`.trim() ||
+        'Evento sin título';
+      const isTimed = row.allDay === false && Boolean(row.startTime);
+      const eventColorId = row.colorId ?? colorId;
+      const reminderValue = row.reminderMinutes ?? notifyMinutes;
+
+      let start: { date?: string; dateTime?: string; timeZone?: string };
+      let end: { date?: string; dateTime?: string; timeZone?: string };
+
+      if (isTimed && row.startTime) {
+        const endTime = row.endTime ?? row.startTime;
+        start = {
+          dateTime: `${row.date}T${row.startTime}:00`,
+          ...(row.timezone ? { timeZone: row.timezone } : {}),
+        };
+        end = {
+          dateTime: `${row.date}T${endTime}:00`,
+          ...(row.timezone ? { timeZone: row.timezone } : {}),
+        };
+      } else {
+        start = { date: row.date };
+        end = { date: nextDay(row.date) };
+      }
+
       const event = {
-        summary: `${row.topic} - ${row.name}`,
-        colorId,
-        start: { date: row.date },
-        end: { date: nextDay(row.date) },
+        summary,
+        colorId: eventColorId,
+        start,
+        end,
+        ...(row.description ? { description: row.description } : {}),
+        ...(row.location ? { location: row.location } : {}),
         reminders: {
           useDefault: false,
-          overrides: [{ method: 'email', minutes: notifyMinutes }],
+          overrides: [{ method: 'email', minutes: reminderValue }],
         },
       };
       const res = await calendar.events.insert({ calendarId, requestBody: event });
