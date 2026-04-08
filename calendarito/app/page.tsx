@@ -1,10 +1,130 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { HeroDemoCarousel } from "@/components/HeroDemoCarousel";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+
+const LOGO_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+  <circle cx="28" cy="28" r="28" fill="#E8E815"/>
+  <path d="M28 44V12M28 12L14 26M28 12L42 26" stroke="#0A0A0A" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const WORDMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="56" viewBox="0 0 320 56">
+  <circle cx="28" cy="28" r="28" fill="#E8E815"/>
+  <path d="M28 44V12M28 12L14 26M28 12L42 26" stroke="#0A0A0A" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="72" y="39" font-family="Poppins, system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="-1" fill="#0A0A0A">Calendarito</text>
+</svg>`;
+
+function downloadSvg(svgString: string, filename: string) {
+  const blob = new Blob([svgString], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function LogoDropdown() {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(LOGO_MARK_SVG);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      setOpen(false);
+    }, 1400);
+  }
+
+  return (
+    <div ref={ref} className="relative flex items-center gap-2">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex cursor-pointer items-center gap-2"
+        aria-label="Calendarito logo menu"
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8E815]">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M7 11V3M7 3L3.5 6.5M7 3L10.5 6.5"
+              stroke="#0A0A0A"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <span className="font-heading text-[15px] font-bold tracking-[-0.03em]">
+          Calendarito
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-2 min-w-[175px] overflow-hidden rounded-xl border border-[#EBEBEB] bg-white py-1 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <button
+            onClick={handleCopy}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5]"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#F0F0F0]">
+              {copied ? (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6L9 17l-5-5" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="#0A0A0A" strokeWidth="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              )}
+            </span>
+            <span>{copied ? "Copied!" : "Copy logo as SVG"}</span>
+          </button>
+
+          <button
+            onClick={() => { downloadSvg(LOGO_MARK_SVG, "calendarito-mark.svg"); setOpen(false); }}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5]"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#F0F0F0]">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M12 15V3M12 15l-4-4M12 15l4-4" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 17v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </span>
+            Download mark
+          </button>
+
+          <button
+            onClick={() => { downloadSvg(WORDMARK_SVG, "calendarito-wordmark.svg"); setOpen(false); }}
+            className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-xs text-[#0A0A0A] transition-colors hover:bg-[#F5F5F5]"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#F0F0F0]">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <path d="M12 15V3M12 15l-4-4M12 15l4-4" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 17v2a2 2 0 002 2h16a2 2 0 002-2v-2" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </span>
+            Download wordmark
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function WavySVG() {
   return (
@@ -66,22 +186,7 @@ export default function HomePage() {
       {/* ── Nav floating pill ── */}
       <div className="fixed top-0 right-0 left-0 z-50 bg-[var(--bg-home)] px-6 pt-4 pb-0">
         <nav className="mx-auto flex w-full max-w-[900px] items-center justify-between rounded-full bg-white px-4 py-2.5 pl-5 shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8E815]">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M7 11V3M7 3L3.5 6.5M7 3L10.5 6.5"
-                  stroke="#0A0A0A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="font-heading text-[15px] font-bold tracking-[-0.03em]">
-              Calendarito
-            </span>
-          </div>
+          <LogoDropdown />
           <div className="flex items-center">
             {authenticated ? (
               <Link
