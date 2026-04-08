@@ -161,9 +161,7 @@ export default function EmpezarPage() {
   const [googleAccessToken, setGoogleAccessToken] = useState('');
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [calendarId, setCalendarId] = useState('');
-  const [creatingNewCalendar, setCreatingNewCalendar] = useState(false);
   const [newCalendarName, setNewCalendarName] = useState('');
-  const [creatingCalendar, setCreatingCalendar] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [extractError, setExtractError] = useState('');
   const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
@@ -291,28 +289,6 @@ export default function EmpezarPage() {
     window.location.href = '/';
   }
 
-  async function handleCreateCalendar() {
-    if (!newCalendarName.trim()) return;
-    setCreatingCalendar(true);
-    try {
-      const res = await fetch('/api/calendars/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCalendarName.trim(), googleAccessToken, supabaseAccessToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Error creating calendar');
-      const created = data.calendar as Calendar;
-      setCalendars(prev => [...prev, created]);
-      setCalendarId(created.id);
-      setCreatingNewCalendar(false);
-      setNewCalendarName('');
-    } catch (err) {
-      const rawMessage = err instanceof Error ? err.message : 'Error creating calendar';
-      setError(toUserFriendlyErrorMessage(rawMessage, 'Error creating calendar'));
-    } finally { setCreatingCalendar(false); }
-  }
-
   async function extractWithAI(body: object, extractionSourceType: 'file' | 'text', extractionSourceSummary: string) {
     setExtracting(true);
     setExtractError('');
@@ -386,10 +362,27 @@ export default function EmpezarPage() {
     setError('');
     setResult(null);
     try {
+      let targetCalendarId = calendarId;
+
+      if (newCalendarName.trim()) {
+        const calRes = await fetch('/api/calendars/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newCalendarName.trim(), googleAccessToken, supabaseAccessToken }),
+        });
+        const calData = await calRes.json();
+        if (!calRes.ok) throw new Error(calData.error ?? 'Error creating calendar');
+        const created = calData.calendar as Calendar;
+        setCalendars(prev => [...prev, created]);
+        targetCalendarId = created.id ?? '';
+        setCalendarId(targetCalendarId);
+        setNewCalendarName('');
+      }
+
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events, calendarId, colorId, notifyDays, notifyHour }),
+        body: JSON.stringify({ events, calendarId: targetCalendarId, colorId, notifyDays, notifyHour }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -702,51 +695,22 @@ Dinner with Valentina on May 12`}
               {authenticated && (
                 <>
                   <StepCard num={2} title="Calendar">
-                    {!creatingNewCalendar ? (
-                      <>
-                        <select
-                          value={calendarId}
-                          onChange={e => setCalendarId(e.target.value)}
-                          className="w-full cursor-pointer appearance-none rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-[14px] py-[11px] text-sm text-[#0A0A0A] outline-none transition-colors focus:border-[#0A0A0A]"
-                        >
-                          {calendars.map(c => <option key={c.id} value={c.id ?? ''}>{c.name}</option>)}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => setCreatingNewCalendar(true)}
-                          className="font-heading mt-2 cursor-pointer text-xs font-semibold text-[#777] underline underline-offset-4 hover:text-[#0A0A0A]"
-                        >
-                          + Create new calendar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Input
-                          type="text"
-                          placeholder="New calendar name"
-                          value={newCalendarName}
-                          onChange={e => setNewCalendarName(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && void handleCreateCalendar()}
-                          autoFocus
-                        />
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void handleCreateCalendar()}
-                            disabled={creatingCalendar || !newCalendarName.trim()}
-                            className="font-heading flex-1 cursor-pointer rounded-full bg-[#0A0A0A] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
-                          >
-                            {creatingCalendar ? 'Creating...' : 'Create'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setCreatingNewCalendar(false); setNewCalendarName(''); }}
-                            className="font-heading cursor-pointer rounded-full border border-[#E0E0E0] px-4 py-2 text-xs font-semibold text-[#555] hover:border-[#0A0A0A]"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </>
+                    <select
+                      value={calendarId}
+                      onChange={e => setCalendarId(e.target.value)}
+                      className="w-full cursor-pointer appearance-none rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-[14px] py-[11px] text-sm text-[#0A0A0A] outline-none transition-colors focus:border-[#0A0A0A]"
+                    >
+                      {calendars.map(c => <option key={c.id} value={c.id ?? ''}>{c.name}</option>)}
+                    </select>
+                    <p className="mt-3 mb-1.5 text-xs text-[#999]">Or create a new calendar</p>
+                    <Input
+                      type="text"
+                      placeholder="New calendar name"
+                      value={newCalendarName}
+                      onChange={e => setNewCalendarName(e.target.value)}
+                    />
+                    {newCalendarName.trim() && (
+                      <p className="mt-1.5 text-[11px] text-[#888]">Will be created when you click &quot;Create in Google Calendar&quot;</p>
                     )}
                   </StepCard>
                 </>
@@ -776,7 +740,10 @@ Dinner with Valentina on May 12`}
                   disabled={loading || extracting || events.length === 0 || !calendarId}
                   className="font-heading w-full cursor-pointer rounded-full border-none bg-[#E8E815] p-3.5 text-[15px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512] disabled:cursor-not-allowed disabled:bg-[#E5E5E5] disabled:text-[#AAA]"
                 >
-                  {loading ? 'Creating in Google Calendar...' : 'Create in Google Calendar'}
+                  {loading
+                    ? (newCalendarName.trim() ? 'Creating calendar & events...' : 'Creating in Google Calendar...')
+                    : 'Create in Google Calendar'
+                  }
                 </button>
               )}
             </div>
