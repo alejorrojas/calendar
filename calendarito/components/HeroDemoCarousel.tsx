@@ -10,9 +10,9 @@ import { CalendarImageDemoAnimation } from "@/components/CalendarImageDemoAnimat
 const SLIDE_DURATIONS = [9500, 17000, 14000];
 
 const slides = [
-  { key: "text",  Component: CalendarDemoAnimation      },
-  { key: "pdf",   Component: CalendarPDFDemoAnimation   },
-  { key: "image", Component: CalendarImageDemoAnimation },
+  { key: "text",  label: "Type it in natural language",     Component: CalendarDemoAnimation      },
+  { key: "pdf",   label: "Upload a PDF or document",        Component: CalendarPDFDemoAnimation   },
+  { key: "image", label: "Share a photo or screenshot",     Component: CalendarImageDemoAnimation },
 ];
 
 export function HeroDemoCarousel() {
@@ -27,6 +27,20 @@ export function HeroDemoCarousel() {
 
   return (
     <div className="relative w-full max-w-[820px] min-h-[520px]">
+      {/* Slide label */}
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={slides[active].key + "-label"}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-[#AAAAAA]"
+        >
+          {slides[active].label}
+        </motion.p>
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {slides.map(
           ({ key, Component }, i) =>
