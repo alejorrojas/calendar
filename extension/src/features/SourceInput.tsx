@@ -167,6 +167,12 @@ export function SourceInput({
             value={inputText}
             onChange={(e) => onInputTextChange(e.target.value)}
             onPaste={handlePaste}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && canExtract) {
+                e.preventDefault()
+                onExtract()
+              }
+            }}
             placeholder={
               pendingFile
                 ? "Add a note (optional)…"
