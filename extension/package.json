@@ -32,9 +32,7 @@
     "description": "Add events to Google Calendar from anywhere.",
     "permissions": ["cookies", "storage", "sidePanel"],
     "host_permissions": [
-      "https://calendarito.com/*",
-      "https://*.supabase.co/*",
-      "https://www.googleapis.com/*"
+      "https://calendarito.com/*"
     ],
     "side_panel": {
       "default_path": "sidepanel.html"
