@@ -24,6 +24,8 @@ interface EventRow {
   allDay: boolean;
   startTime?: string;
   endTime?: string;
+  description?: string;
+  invites?: string[];
   colorId?: string;
 }
 
@@ -63,22 +65,35 @@ function toTemporalEnd(dateOnly: string, allDay: boolean, time?: string) {
   return Temporal.ZonedDateTime.from(`${dateOnly}T${time}:00[UTC]`);
 }
 
+function buildPreviewDescription(event: EventRow): string | undefined {
+  const parts: string[] = [];
+  const description = event.description?.trim();
+  if (description) parts.push(description);
+  if (event.invites && event.invites.length > 0) {
+    parts.push(`Invites: ${event.invites.join(', ')}`);
+  }
+  if (parts.length === 0) return undefined;
+  return parts.join('\n\n');
+}
+
 export default function CalendarPreview({ events, colorId }: Props) {
   const calendarEvents = useMemo(
     () =>
-      events.reduce<Array<{ id: string; title: string; start: unknown; end: unknown; calendarId: string }>>(
+      events.reduce<Array<{ id: string; title: string; start: unknown; end: unknown; calendarId: string; description?: string }>>(
         (acc, event, index) => {
           const dateOnly = normalizeDateOnly(event.date);
           if (!dateOnly) return acc;
 
           const isAllDay = event.allDay !== false;
+          const endTime = event.endTime ?? event.startTime;
           const eventColorId = event.colorId ?? colorId;
           acc.push({
             id: String(index),
             title: event.summary,
             start: toTemporalStart(dateOnly, isAllDay, event.startTime),
-            end: toTemporalEnd(dateOnly, isAllDay, event.endTime),
+            end: toTemporalEnd(dateOnly, isAllDay, endTime),
             calendarId: `preview-${eventColorId}`,
+            description: buildPreviewDescription(event),
           });
           return acc;
         },
