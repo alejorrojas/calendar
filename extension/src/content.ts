@@ -12,7 +12,30 @@ export const config: PlasmoCSConfig = {
 
 const STORAGE_KEY = "calendarito_session"
 
-function readSession(): object | null {
+function readSessionFromLocalStorage(): object | null {
+  // Supabase browser client stores the full session (including provider_token) in localStorage.
+  // The SSR cookies only contain access_token/refresh_token/user — no provider_token.
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (!key?.includes("-auth-token")) continue
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      try {
+        const parsed = JSON.parse(raw)
+        if (parsed?.access_token && parsed?.provider_token) {
+          console.log("[calendarito-ext] Session found in localStorage (with provider_token)")
+          return parsed
+        }
+      } catch {}
+    }
+  } catch (e) {
+    console.error("[calendarito-ext] Failed to read localStorage:", e)
+  }
+  return null
+}
+
+function readSessionFromCookies(): object | null {
   const cookies = document.cookie.split(";")
   const tokenParts: { name: string; value: string }[] = []
 
@@ -26,12 +49,9 @@ function readSession(): object | null {
   }
 
   if (tokenParts.length > 0) {
-    // Sort to handle chunked cookies (.0, .1, etc.)
     tokenParts.sort((a, b) => a.name.localeCompare(b.name))
     const raw = tokenParts.map((p) => decodeURIComponent(p.value)).join("")
-
     try {
-      // Supabase SSR encodes cookie values as "base64-<b64>" — decode if present
       const jsonStr = raw.startsWith("base64-") ? atob(raw.slice(7)) : raw
       const parsed = JSON.parse(jsonStr)
       if (parsed?.access_token) {
@@ -44,6 +64,11 @@ function readSession(): object | null {
   }
 
   return null
+}
+
+function readSession(): object | null {
+  // Prefer localStorage: it has provider_token (Google OAuth token) which cookies lack after refresh
+  return readSessionFromLocalStorage() ?? readSessionFromCookies()
 }
 
 async function syncSession() {
