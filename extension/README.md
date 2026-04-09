@@ -56,6 +56,14 @@ English
 
 ---
 
+## Single Purpose
+
+Calendarito has a single, concrete purpose: **create Google Calendar events from any browser tab using natural language**.
+
+Every feature in the extension exists solely to serve this purpose — the side panel UI for input, the content script to read the user's existing session, and the API calls to extract and create events. The extension does not modify web pages, track browsing activity, inject ads, or perform any action unrelated to event creation.
+
+---
+
 ## Permissions Justification
 
 These are the permissions declared in the manifest and the justification for each, as required by the Chrome Web Store review process.
@@ -67,9 +75,9 @@ The extension's entire UI lives in a Chrome Side Panel. This permission is requi
 Used to persist the user's Calendarito session (read from calendarito.com) in `chrome.storage.local`, so the side panel can access it without re-reading cookies on every interaction.
 
 ### `cookies`
-**Declared but not actively used.** The auth flow reads the session via a content script (`document.cookie`) rather than the `chrome.cookies` API. This permission can be removed in a future cleanup.
+Used by the background service worker to read the Supabase auth session from `calendarito.com` cookies via `chrome.cookies.getAll({ domain: "calendarito.com" })`. This allows the extension to pick up the user's existing login session without requiring a separate sign-in flow inside the extension.
 
-> **Note:** The content script only runs on `https://calendarito.com/*` and only reads the Supabase auth session cookie set by Calendarito. It has no access to cookies from any other domain.
+> **Note:** Cookie access is strictly limited to `calendarito.com` by the declared `host_permissions`. The extension cannot read cookies from any other domain.
 
 ### `host_permissions: https://calendarito.com/*`
 Required for two reasons:
@@ -77,6 +85,38 @@ Required for two reasons:
 2. The extension makes API calls to `calendarito.com/api/*` to extract events and create them in Google Calendar.
 
 No other domains are accessed.
+
+---
+
+## Remote Code
+
+**Does the extension use remote code?** Yes.
+
+The extension sends user-provided content (text, files, or images) to `calendarito.com/api/*` for server-side AI processing. The server extracts structured event data and returns it to the extension. No JavaScript or WebAssembly is fetched from a remote URL and executed at runtime — all extension code is bundled at build time. The remote calls are strictly API requests to the extension's own backend.
+
+---
+
+## Data Usage
+
+### Data collected
+
+| Data type | Collected | Purpose |
+|-----------|-----------|---------|
+| Personal identification info | No | — |
+| Health information | No | — |
+| Financial and payment info | No | — |
+| Authentication information | Yes | The user's Supabase/Google OAuth session token is read from `calendarito.com` and stored in `chrome.storage.local` to authorize API calls. It is never shared with third parties. |
+| Personal communications | No | — |
+| Location | No | — |
+| Web history | No | — |
+| User activity | No | — |
+| Web content | No | — |
+
+### Certifications
+
+- We do not sell or transfer user data to third parties, outside of the approved use cases.
+- We do not use or transfer user data for purposes unrelated to the extension's single purpose.
+- We do not use or transfer user data to determine creditworthiness or for lending purposes.
 
 ---
 
