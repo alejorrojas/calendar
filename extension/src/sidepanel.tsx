@@ -101,6 +101,12 @@ export default function SidePanel() {
   const [result, setResult] = useState<{ summary: string; date: string }[] | null>(null)
 
   const userEmail = session?.user?.email ?? ""
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+
+  function handleSignOut() {
+    chrome.storage.local.remove("calendarito_session")
+    setAvatarMenuOpen(false)
+  }
 
   const calendarLabel = (c: Calendar) =>
     c.id === userEmail ? `Default Calendar - ${userEmail}` : c.name
@@ -321,14 +327,51 @@ export default function SidePanel() {
           </span>
         </div>
         {session ? (
-          <div className="h-7 w-7 overflow-hidden rounded-full bg-[#f0f0f0]">
-            {session.user?.user_metadata?.avatar_url ? (
-              <img src={session.user.user_metadata.avatar_url} alt="avatar" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-[#888]">
-                {session.user?.email?.[0]?.toUpperCase() ?? "?"}
-              </div>
-            )}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAvatarMenuOpen((o) => !o)}
+              className="h-7 w-7 cursor-pointer overflow-hidden rounded-full bg-[#f0f0f0] transition-opacity hover:opacity-80"
+            >
+              {session.user?.user_metadata?.avatar_url ? (
+                <img src={session.user.user_metadata.avatar_url} alt="avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-[#888]">
+                  {session.user?.email?.[0]?.toUpperCase() ?? "?"}
+                </div>
+              )}
+            </button>
+            <AnimatePresence>
+              {avatarMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setAvatarMenuOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute right-0 top-9 z-20 min-w-[160px] overflow-hidden rounded-xl border border-[#ECECEC] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+                  >
+                    {userEmail && (
+                      <div className="border-b border-[#F5F5F5] px-3 py-2">
+                        <p className="truncate text-[11px] text-[#888]">{userEmail}</p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-xs text-[#C62828] transition-colors hover:bg-[#FFF0F0]"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Sign out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         ) : (
           <a href={`${APP}/login`} target="_blank" rel="noreferrer"
