@@ -30,7 +30,7 @@ const extractedEventSchema = z.object({
   timezone: z.string().nullable().describe('Timezone, for example America/Argentina/Buenos_Aires, or null'),
   description: z.string().nullable().describe('Optional description or null'),
   location: z.string().nullable().describe('Optional location or null'),
-  invites: z.array(z.string().trim().toLowerCase().regex(EMAIL_REGEX)).default([])
+  invites: z.array(z.string().trim().toLowerCase().regex(EMAIL_REGEX))
     .describe('List of attendee emails explicitly mentioned as invitees for this event'),
 });
 
