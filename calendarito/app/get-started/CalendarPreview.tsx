@@ -26,6 +26,7 @@ interface EventRow {
   endTime?: string;
   description?: string;
   invites?: string[];
+  hasGoogleMeet?: boolean;
   colorId?: string;
 }
 
@@ -72,6 +73,7 @@ function buildPreviewDescription(event: EventRow): string | undefined {
   if (event.invites && event.invites.length > 0) {
     parts.push(`Invites: ${event.invites.join(', ')}`);
   }
+  parts.push(`Google Meet: ${event.hasGoogleMeet ? 'Yes' : 'No'}`);
   if (parts.length === 0) return undefined;
   return parts.join('\n\n');
 }

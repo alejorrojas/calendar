@@ -19,6 +19,7 @@ interface EventRow {
   description?: string;
   location?: string;
   invites?: string[];
+  hasGoogleMeet?: boolean;
   colorId?: string;
   reminderMinutes?: number;
 }
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
       const isTimed = row.allDay === false && Boolean(row.startTime);
       const eventColorId = row.colorId ?? colorId;
       const reminderValue = row.reminderMinutes ?? notifyMinutes;
+      const shouldCreateMeetLink = row.hasGoogleMeet === true;
 
       let start: { date?: string; dateTime?: string; timeZone?: string };
       let end: { date?: string; dateTime?: string; timeZone?: string };
@@ -102,9 +104,23 @@ export async function POST(req: NextRequest) {
         ...(inviteEmails.length > 0
           ? { attendees: inviteEmails.map((email) => ({ email })) }
           : {}),
+        ...(shouldCreateMeetLink
+          ? {
+              conferenceData: {
+                createRequest: {
+                  requestId: crypto.randomUUID(),
+                  conferenceSolutionKey: { type: 'hangoutsMeet' as const },
+                },
+              },
+            }
+          : {}),
         reminders: { useDefault: false, overrides: [{ method: 'email', minutes: reminderValue }] },
       };
-      const res = await calendar.events.insert({ calendarId, requestBody: event });
+      const res = await calendar.events.insert({
+        calendarId,
+        requestBody: event,
+        ...(shouldCreateMeetLink ? { conferenceDataVersion: 1 } : {}),
+      });
       const inserted = (res as { data: { htmlLink?: string } }).data;
       created.push({ summary: event.summary, date: row.date, link: inserted.htmlLink });
     }

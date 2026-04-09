@@ -50,6 +50,7 @@ interface EventRow {
   description?: string;
   location?: string;
   invites?: string[];
+  hasGoogleMeet?: boolean;
   colorId?: string;
 }
 
@@ -269,6 +270,7 @@ export default function EmpezarPage() {
               description: maybeEvent.description,
               location: maybeEvent.location,
               invites: normalizeInviteEmails(maybeEvent.invites),
+              hasGoogleMeet: maybeEvent.hasGoogleMeet === true,
               colorId:
                 typeof maybeEvent.colorId === "string"
                   ? maybeEvent.colorId
@@ -421,6 +423,7 @@ export default function EmpezarPage() {
             description: maybeEvent.description,
             location: maybeEvent.location,
             invites: normalizeInviteEmails(maybeEvent.invites),
+            hasGoogleMeet: maybeEvent.hasGoogleMeet === true,
             colorId: maybeEvent.colorId,
           } satisfies EventRow,
         ];
@@ -719,7 +722,7 @@ export default function EmpezarPage() {
                               className="group flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left"
                             >
                               <div className="min-w-0">
-                                <p className="truncate text-xs font-medium text-[#0A0A0A]">
+                                <p className="mb-0.5 truncate text-xs font-medium text-[#0A0A0A]">
                                   {event.summary}
                                 </p>
                                 <p className="text-[11px] text-[#888]">
@@ -729,6 +732,11 @@ export default function EmpezarPage() {
                                   <p className="text-[11px] text-[#888]">
                                     {event.invites.length} invite
                                     {event.invites.length !== 1 ? "s" : ""}
+                                  </p>
+                                )}
+                                {event.hasGoogleMeet && (
+                                  <p className="text-[11px] text-[#888]">
+                                    Google Meet
                                   </p>
                                 )}
                               </div>
@@ -773,6 +781,30 @@ export default function EmpezarPage() {
                                   className="px-3 py-2 text-xs"
                                   placeholder="Event title"
                                 />
+                                <label className="flex items-center justify-between rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-3 py-2 text-xs text-[#0A0A0A]">
+                                  <span>Google Meet</span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={event.hasGoogleMeet === true}
+                                    onClick={() =>
+                                      updateEvent(i, {
+                                        hasGoogleMeet: !(event.hasGoogleMeet === true),
+                                      })
+                                    }
+                                    className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full transition-colors ${event.hasGoogleMeet === true
+                                      ? "bg-[#0A0A0A]"
+                                      : "bg-[#D0D5DD]"
+                                      }`}
+                                  >
+                                    <span
+                                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${event.hasGoogleMeet === true
+                                        ? "translate-x-4"
+                                        : "translate-x-0.5"
+                                        }`}
+                                    />
+                                  </button>
+                                </label>
                                 <div className="box-border flex min-h-[34px] w-full flex-wrap items-center gap-1.5 rounded-xl border-[1.5px] border-[#E0E0E0] bg-[#FAFAFA] px-3 py-2 text-xs text-[#0A0A0A] outline-none transition-colors focus-within:border-[#0A0A0A]">
                                   {(event.invites ?? []).map((invite) => (
                                     <span
@@ -900,11 +932,10 @@ export default function EmpezarPage() {
                                         updateEvent(i, { colorId: c.id })
                                       }
                                       title={c.name}
-                                      className={`h-6 w-6 cursor-pointer rounded-full border-[2px] ${c.swatchClass} ${
-                                        (event.colorId ?? colorId) === c.id
-                                          ? "border-[#0A0A0A]"
-                                          : "border-transparent"
-                                      }`}
+                                      className={`h-6 w-6 cursor-pointer rounded-full border-[2px] ${c.swatchClass} ${(event.colorId ?? colorId) === c.id
+                                        ? "border-[#0A0A0A]"
+                                        : "border-transparent"
+                                        }`}
                                     />
                                   ))}
                                 </div>
@@ -1139,7 +1170,7 @@ export default function EmpezarPage() {
                   key={events
                     .map(
                       (e) =>
-                        `${e.date}${e.summary}${e.colorId ?? colorId}${e.description ?? ""}${(e.invites ?? []).join(",")}`,
+                        `${e.date}${e.summary}${e.colorId ?? colorId}${e.description ?? ""}${(e.invites ?? []).join(",")}${e.hasGoogleMeet ? "meet" : "nomeet"}`,
                     )
                     .join("|")}
                   events={events}

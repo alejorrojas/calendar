@@ -32,6 +32,8 @@ const extractedEventSchema = z.object({
   location: z.string().nullable().describe('Optional location or null'),
   invites: z.array(z.string().trim().toLowerCase().regex(EMAIL_REGEX))
     .describe('List of attendee emails explicitly mentioned as invitees for this event'),
+  hasGoogleMeet: z.boolean()
+    .describe('Whether this event should include a Google Meet link'),
 });
 
 const extractionSchema = z.object({
@@ -143,6 +145,10 @@ Strict rules:
 - Do not invent critical data (date, time, location, or attendees).
 - If attendee emails are explicitly mentioned as part of the meeting/event, return them under "invites".
 - If there are no explicit attendee emails for an event, return "invites": [].
+- Always return "hasGoogleMeet" for every event.
+- Set hasGoogleMeet=true when the source explicitly indicates a meeting/call/video call/meetup online intent.
+- Treat wording such as "reunion/reunión", "meeting", "call", "meet", "videollamada", "zoom", "google meet", "gmeet", "huddle", or similar slang as meeting intent unless context clearly indicates in-person only.
+- Set hasGoogleMeet=false when in-person context is explicit or there is no clear remote-meeting intent.
 `,
       messages: [{ role: 'user', content: userContent }],
       schema: extractionSchema,
@@ -155,6 +161,7 @@ Strict rules:
         return {
           ...event,
           invites,
+          hasGoogleMeet: event.hasGoogleMeet === true,
         };
       }),
     };
