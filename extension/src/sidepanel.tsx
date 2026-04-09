@@ -346,26 +346,21 @@ export default function SidePanel() {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setAvatarMenuOpen(false)} />
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ duration: 0.12 }}
-                    className="absolute right-0 top-9 z-20 min-w-[160px] overflow-hidden rounded-xl border border-[#ECECEC] bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.14 }}
+                    className="absolute right-0 top-9 z-20 w-[200px] rounded-2xl border border-[#ECECEC] bg-white p-3 shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
                   >
                     {userEmail && (
-                      <div className="border-b border-[#F5F5F5] px-3 py-2">
-                        <p className="truncate text-[11px] text-[#888]">{userEmail}</p>
-                      </div>
+                      <p className="mb-2.5 truncate text-[11px] text-[#888]">{userEmail}</p>
                     )}
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-xs text-[#C62828] transition-colors hover:bg-[#FFF0F0]"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                      className="w-full cursor-pointer rounded-full border-[1.5px] border-[#DDD] bg-white py-2 text-xs font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
-                          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
                       Sign out
                     </button>
                   </motion.div>
