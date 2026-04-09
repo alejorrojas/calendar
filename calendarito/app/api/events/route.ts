@@ -159,7 +159,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ created });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
+    // GaxiosError (googleapis) nests the real message in err.response.data
+    const gaxios = err as { response?: { data?: { error?: { message?: string } | string } } };
+    const googleMsg =
+      typeof gaxios?.response?.data?.error === 'string'
+        ? gaxios.response.data.error
+        : gaxios?.response?.data?.error?.message;
+    const message = googleMsg ?? (err instanceof Error ? err.message : 'Unknown error');
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
