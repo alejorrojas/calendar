@@ -314,68 +314,6 @@ export default function SidePanel() {
 
   return (
     <div className="flex h-screen flex-col bg-[#f2f2f2]">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-[#e8e8e8] bg-white px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8E815]">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M7 11V3M7 3L3.5 6.5M7 3L10.5 6.5" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span style={{ fontFamily: "Poppins, sans-serif" }} className="text-[15px] font-bold tracking-[-0.03em] text-[#0A0A0A]">
-            Calendarito
-          </span>
-        </div>
-        {session ? (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setAvatarMenuOpen((o) => !o)}
-              className="h-7 w-7 cursor-pointer overflow-hidden rounded-full bg-[#f0f0f0] transition-opacity hover:opacity-80"
-            >
-              {session.user?.user_metadata?.avatar_url ? (
-                <img src={session.user.user_metadata.avatar_url} alt="avatar" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-[#888]">
-                  {session.user?.email?.[0]?.toUpperCase() ?? "?"}
-                </div>
-              )}
-            </button>
-            <AnimatePresence>
-              {avatarMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setAvatarMenuOpen(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.14 }}
-                    className="absolute right-0 top-9 z-20 w-[200px] rounded-2xl border border-[#ECECEC] bg-white p-3 shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
-                  >
-                    {userEmail && (
-                      <p className="mb-2.5 truncate text-[11px] text-[#888]">{userEmail}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleSignOut}
-                      style={{ fontFamily: "Poppins, sans-serif" }}
-                      className="w-full cursor-pointer rounded-full border-[1.5px] border-[#DDD] bg-white py-2 text-xs font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
-                    >
-                      Sign out
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <a href={`${APP}/login`} target="_blank" rel="noreferrer"
-            className="rounded-full bg-[#E8E815] px-3 py-1 text-[11px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512]">
-            Sign in
-          </a>
-        )}
-      </header>
-
       {/* Body */}
       <main className="flex-1 overflow-y-auto p-3">
         {!session ? (
@@ -675,6 +613,68 @@ export default function SidePanel() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="flex items-center justify-between border-t border-[#e8e8e8] bg-white px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8E815]">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M7 11V3M7 3L3.5 6.5M7 3L10.5 6.5" stroke="#0A0A0A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span style={{ fontFamily: "Poppins, sans-serif" }} className="text-[15px] font-bold tracking-[-0.03em] text-[#0A0A0A]">
+            Calendarito
+          </span>
+        </div>
+        {session ? (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAvatarMenuOpen((o) => !o)}
+              className="h-7 w-7 cursor-pointer overflow-hidden rounded-full bg-[#f0f0f0] transition-opacity hover:opacity-80"
+            >
+              {session.user?.user_metadata?.avatar_url ? (
+                <img src={session.user.user_metadata.avatar_url} alt="avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-[#888]">
+                  {session.user?.email?.[0]?.toUpperCase() ?? "?"}
+                </div>
+              )}
+            </button>
+            <AnimatePresence>
+              {avatarMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setAvatarMenuOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.14 }}
+                    className="absolute bottom-9 right-0 z-20 w-[200px] rounded-2xl border border-[#ECECEC] bg-white p-3 shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
+                  >
+                    {userEmail && (
+                      <p className="mb-2.5 truncate text-[11px] text-[#888]">{userEmail}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                      className="w-full cursor-pointer rounded-full border-[1.5px] border-[#DDD] bg-white py-2 text-xs font-semibold text-[#0A0A0A] transition-colors hover:border-[#0A0A0A]"
+                    >
+                      Sign out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <a href={`${APP}/login`} target="_blank" rel="noreferrer"
+            className="rounded-full bg-[#E8E815] px-3 py-1 text-[11px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#d4d512]">
+            Sign in
+          </a>
+        )}
+      </footer>
     </div>
   )
 }
